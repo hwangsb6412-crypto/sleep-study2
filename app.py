@@ -112,11 +112,10 @@ if df1.empty and df2.empty:
     st.error("⚠️ 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
     st.stop()
 
-# 탭 구성 (기존 2개에 자가진단 추가)
 tab1, tab2, tab3 = st.tabs(["📉 라이프스타일 분석 (생활 습관)", "💤 수면 효율 분석 (외부 요인)", "📋 나의 수면 점수 진단"])
 
 # ------------------------------------------
-# 탭 1: 생활 습관 (기존 기능 유지)
+# 탭 1: 생활 습관 (기존 유지)
 # ------------------------------------------
 with tab1:
     c1, c2, c3, c4 = st.columns(4)
@@ -141,7 +140,7 @@ with tab1:
     st.plotly_chart(fig3, use_container_width=True)
 
 # ------------------------------------------
-# 탭 2: 수면 효율 (기존 기능 유지)
+# 탭 2: 수면 효율 (기존 유지)
 # ------------------------------------------
 with tab2:
     c1, c2, c3, c4 = st.columns(4)
@@ -172,7 +171,7 @@ with tab2:
         st.plotly_chart(fig_f, use_container_width=True)
 
 # ------------------------------------------
-# 탭 3: 나의 수면 점수 진단 (추가된 기능)
+# 탭 3: 나의 수면 점수 진단 (스트레스 지수 제외)
 # ------------------------------------------
 with tab3:
     st.header("🔍 수면 건강 자가진단 서비스")
@@ -183,38 +182,41 @@ with tab3:
         with col_in1:
             user_bmi = st.selectbox("현재 체중 상태 (BMI)", ["정상", "과체중", "비만"])
             user_smoke = st.radio("흡연 여부", ["비흡연", "흡연"], horizontal=True)
-            user_stress = st.slider("평소 스트레스 지수 (1~10)", 1, 10, 5)
+            user_sleep = st.number_input("일일 평균 수면 시간 (시간)", 0.0, 12.0, 7.0, step=0.5)
         with col_in2:
             user_alc = st.number_input("일주일 음주 횟수 (회)", 0, 7, 0)
             user_ex = st.slider("일주일 운동 횟수 (회)", 0, 7, 3)
-            user_sleep = st.number_input("일일 평균 수면 시간", 0, 12, 7)
 
         if st.button("내 수면 점수 확인하기 ✨"):
-            # 분석 결과 기반 점수 로직
-            base_score = 80
-            if user_bmi == "과체중": base_score -= 5
-            elif user_bmi == "비만": base_score -= 15
-            if user_smoke == "흡연": base_score -= 10
-            base_score -= (user_alc * 3)
-            base_score -= (user_stress * 2)
-            base_score += (user_ex * 4)
-            if 7 <= user_sleep <= 8: base_score += 10
-            elif user_sleep < 6: base_score -= 10
+            # 분석 결과 기반 점수 로직 (스트레스 제외 보정)
+            base_score = 90 # 스트레스가 빠진 만큼 기본 점수 상향 조정
+            
+            if user_bmi == "과체중": base_score -= 7
+            elif user_bmi == "비만": base_score -= 18
+            
+            if user_smoke == "흡연": base_score -= 12
+            
+            base_score -= (user_alc * 4) # 음주 영향력 강화
+            base_score += (user_ex * 5)  # 운동 긍정 영향 강화
+            
+            # 수면 시간 적절성 (7~8.5시간 이상적)
+            if 7 <= user_sleep <= 8.5: base_score += 10
+            elif user_sleep < 6 or user_sleep > 10: base_score -= 10
             
             final_score = max(0, min(100, base_score))
             
             st.markdown("---")
             st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
             
-            if final_score >= 80:
+            if final_score >= 85:
                 st.success("🎉 아주 좋은 습관입니다! 데이터상으로 숙면 가능성이 매우 높습니다.")
-            elif final_score >= 60:
+            elif final_score >= 65:
                 st.warning("⚖️ 보통입니다. 운동량을 조금 더 늘리거나 음주를 줄여보세요.")
             else:
                 st.error("🚨 개선이 시급합니다. 수면 효율을 높이기 위한 생활 습관 교정을 추천드립니다.")
             
-            st.info(f"💡 인사이트: 당신과 비슷한 연령대 데이터에 따르면, 운동 빈도를 주 {user_ex+1}회로 높일 때 깊은 수면 비중이 유의미하게 상승했습니다.")
+            st.info(f"💡 인사이트: 입력하신 데이터와 유사한 모집단 분석 결과, 주 {user_ex}회 운동을 {user_ex+1}회로 높일 때 깊은 수면 비중이 유의미하게 상승하는 경향이 있었습니다.")
 
-# 원본 데이터 확인 (기능 유지)
+# 원본 데이터 확인
 with st.expander("데이터 원본 상세보기"):
     st.dataframe(df1.head())
