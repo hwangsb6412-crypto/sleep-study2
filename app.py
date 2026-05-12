@@ -233,6 +233,6 @@ with tab2:
                 fig_factor = px.bar(avg_factor, x='흡연여부', y='각성횟수', text_auto='.1f',
                                     color='흡연여부', color_discrete_map={'비흡연': '#38bdf8', '흡연': '#ef4444'})
                 fig_factor.update_traces(textfont_size=16)
-                fig_factor.update_layout(yaxis_title="평균 각성 횟수 (회)", xaxis_title="흡연여부 (흡연/비흡연)")
+                fig_factor.update_layout(yaxis_title="평균 각성 횟수 (회)", xaxis_title="흡연여부")
 
             st.plotly_chart(fig_factor, use_container_width=True)
