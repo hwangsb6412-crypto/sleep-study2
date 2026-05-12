@@ -60,52 +60,55 @@ def load_data_2():
         'Smoking status': '흡연여부', 'Age': '나이'
     })
 
-# 데이터 원본 로드
-df1_raw = load_data_1()
-df2_raw = load_data_2()
+try:
+    df1_raw = load_data_1()
+    df2_raw = load_data_2()
+except Exception as e:
+    st.error(f"데이터를 읽는 중 오류가 발생했습니다: {e}")
+    df1_raw = pd.DataFrame()
+    df2_raw = pd.DataFrame()
 
 if df1_raw.empty and df2_raw.empty:
-    st.error("⚠️ 데이터를 불러올 수 없습니다. CSV 파일 위치를 확인해 주세요.")
+    st.error("⚠️ 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
     st.stop()
 
 # ==========================================
-# 3. 사이드바 동적 필터 기능 (뽑아온 핵심 기능)
+# 3. 사이드바 동적 필터 (이 부분만 새로 추가되었습니다)
 # ==========================================
 st.sidebar.title("🎮 동적 필터 조절")
 
-# 나이 슬라이더
-min_age = int(min(df1_raw['나이'].min(), df2_raw['나이'].min()))
-max_age = int(max(df1_raw['나이'].max(), df2_raw['나이'].max()))
+# 나이 필터
+min_age = int(min(df1_raw['나이'].min() if not df1_raw.empty else 10, df2_raw['나이'].min() if not df2_raw.empty else 10))
+max_age = int(max(df1_raw['나이'].max() if not df1_raw.empty else 80, df2_raw['나이'].max() if not df2_raw.empty else 80))
 age_range = st.sidebar.slider("분석 연령대 설정", min_age, max_age, (min_age, max_age))
 
-# 직업군 멀티 셀렉트
-all_occupations = sorted(df1_raw['직업'].unique().tolist())
+# 직업 필터
+all_occupations = sorted(df1_raw['직업'].unique().tolist()) if not df1_raw.empty else []
 selected_occ = st.sidebar.multiselect("분석 직업군 선택", all_occupations, default=all_occupations)
 
-# [필터링 적용] 모든 데이터는 이제 이 df1, df2를 사용합니다.
+# [핵심] 필터링 적용된 데이터셋 생성
 df1 = df1_raw[(df1_raw['나이'] >= age_range[0]) & (df1_raw['나이'] <= age_range[1]) & (df1_raw['직업'].isin(selected_occ))].copy()
 df2 = df2_raw[(df2_raw['나이'] >= age_range[0]) & (df2_raw['나이'] <= age_range[1])].copy()
 
 # ==========================================
-# 4. 메인 UI 구성 (기존 그래프들 유지)
+# 4. 메인 UI 구성 (이후는 주신 코드와 동일)
 # ==========================================
 st.title("📊 수면 건강 핵심 데이터 대시보드")
-st.markdown(f"현재 데이터 범위: **나이 {age_range[0]}~{age_range[1]}세** / **선택된 직업군 {len(selected_occ)}개**")
 
 if df1.empty and df2.empty:
-    st.warning("선택한 조건에 맞는 데이터가 없습니다. 필터를 조정해 주세요.")
+    st.warning("선택한 필터 조건에 맞는 데이터가 없습니다. 사이드바 설정을 확인해주세요.")
     st.stop()
 
 tab1, tab2 = st.tabs(["📉 라이프스타일 분석 (생활 습관)", "💤 수면 효율 분석 (외부 요인)"])
 
 # ------------------------------------------
-# 탭 1: 기존 그래프 구성 모두 복구
+# 탭 1: 생활 습관
 # ------------------------------------------
 with tab1:
     if df1.empty:
-        st.warning("`Sleep_health_and_lifestyle_dataset.csv` 데이터가 없습니다.")
+        st.warning("해당 조건의 `Sleep_health_and_lifestyle_dataset.csv` 데이터가 없습니다.")
     else:
-        # 상단 Metric
+        # 상단 Metric 지표
         c1, c2, c3 = st.columns(3)
         c1.metric("평균 수면 시간", f"{df1['수면시간'].mean():.1f}시간")
         c2.metric("평균 스트레스 지수", f"{df1['스트레스지수'].mean():.1f}점")
@@ -113,9 +116,27 @@ with tab1:
         
         st.markdown("---")
         
+        # [기존 기능 유지] 원하는 기준별 수면시간 분석
+        st.subheader("🎯 선택한 기준별 수면시간 집중 분석")
+        target_category = st.selectbox(
+            "무엇에 따른 수면시간을 확인하시겠습니까?",
+            options=['직업', 'BMI분류', '스트레스지수'],
+            index=0
+        )
+        
+        avg_dynamic = df1.groupby(target_category)['수면시간'].mean().reset_index().sort_values('수면시간')
+        fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', 
+                         color='수면시간', text_auto='.1f', color_continuous_scale='Viridis',
+                         title=f"[{target_category}]별 평균 수면 시간")
+        st.plotly_chart(fig_dyn, use_container_width=True)
+        
+        st.markdown("---")
+
+        # 기존에 있던 그래프들
         col_left, col_right = st.columns(2)
+        
         with col_left:
-            st.subheader("👨‍💻 직업별 평균 수면 시간")
+            st.subheader("👨‍💻 직업별 평균 수면 시간 (기본)")
             avg_sleep = df1.groupby('직업')['수면시간'].mean().reset_index().sort_values('수면시간')
             fig1 = px.bar(avg_sleep, x='수면시간', y='직업', orientation='h', color='수면시간', text_auto='.1f', color_continuous_scale='Blues')
             st.plotly_chart(fig1, use_container_width=True)
@@ -141,11 +162,11 @@ with tab1:
             st.plotly_chart(fig4, use_container_width=True)
 
 # ------------------------------------------
-# 탭 2: 기존 그래프 구성 모두 유지
+# 탭 2: 수면 효율
 # ------------------------------------------
 with tab2:
     if df2.empty:
-        st.warning("`Sleep_Efficiency.csv` 데이터가 없습니다.")
+        st.warning("해당 조건의 `Sleep_Efficiency.csv` 데이터가 없습니다.")
     else:
         c1, c2, c3 = st.columns(3)
         c1.metric("평균 수면 효율", f"{df2['수면효율'].mean()*100:.1f}%")
@@ -159,8 +180,8 @@ with tab2:
             st.subheader("🍺 알코올 섭취량별 수면 효율")
             avg_eff = df2.groupby('알코올')['수면효율'].mean().reset_index()
             avg_eff['수면효율'] = (avg_eff['수면효율'] * 100).round(1)
-            fig5 = px.line(avg_eff, x='알코올', y='수면효율', markers=True, text='수면효율')
-            fig5.update_traces(line_color="#8b5cf6")
+            fig5 = px.line(avg_eff, x='알코올', y='수면효율', markers=True, text='수면효율',
+                           labels={'알코올': '음주량', '수면효율': '수면 효율 (%)'})
             st.plotly_chart(fig5, use_container_width=True)
 
         with col_eff2:
@@ -182,6 +203,6 @@ with tab2:
             st.subheader("🏃 주당 운동 빈도와 깊은 수면")
             avg_deep = df2.groupby('운동빈도')['깊은수면비율'].mean().reset_index()
             avg_deep['깊은수면비율'] = avg_deep['깊은수면비율'].round(1)
-            fig8 = px.line(avg_deep, x='운동빈도', y='깊은수면비율', markers=True, text='깊은수면비율')
-            fig8.update_traces(line_color="#10b981")
+            fig8 = px.line(avg_deep, x='운동빈도', y='깊은수면비율', markers=True, text='깊은수면비율',
+                           labels={'운동빈도': '주당 운동 횟수(회)', '깊은수면비율': '깊은 수면 비율 (%)'})
             st.plotly_chart(fig8, use_container_width=True)
