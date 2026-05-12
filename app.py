@@ -101,4 +101,71 @@ with tab1:
         st.subheader("📋 직업별 상세 지표 비교")
         selected_col = st.selectbox(
             "비교하고 싶은 항목을 선택하세요:",
-            options
+            options=['수면시간', '스트레스지수', '수면의질'],
+            index=0
+        )
+        
+        # 선택된 지표에 따른 컬러 테마 설정
+        color_themes = {'수면시간': 'Blues', '스트레스지수': 'Reds', '수면의질': 'Greens'}
+        
+        # 데이터 그룹화 및 정렬
+        avg_data = df1.groupby('직업')[selected_col].mean().reset_index().sort_values(selected_col)
+        
+        # 메인 그래프 출력
+        fig_main = px.bar(
+            avg_data, 
+            x=selected_col, 
+            y='직업', 
+            orientation='h', 
+            color=selected_col, 
+            text_auto='.1f', 
+            color_continuous_scale=color_themes[selected_col],
+            labels={selected_col: f"평균 {selected_col}"}
+        )
+        st.plotly_chart(fig_main, use_container_width=True)
+
+        st.markdown("---")
+        
+        # 하단 BMI 및 수면장애 분석
+        col_low1, col_low2 = st.columns(2)
+        with col_low1:
+            st.subheader("⚖️ 체중분류별 수면 장애 현황")
+            fig3 = px.bar(df1.groupby(['BMI분류', '수면장애']).size().reset_index(name='인원수'), x='BMI분류', y='인원수', color='수면장애', barmode='group', text_auto=True)
+            st.plotly_chart(fig3, use_container_width=True)
+            
+        with col_low2:
+            st.subheader("🌙 수면 장애별 수면의 질 점수")
+            avg_qual = df1.groupby('수면장애')['수면의질'].mean().reset_index()
+            fig4 = px.bar(avg_qual, x='수면장애', y='수면의질', color='수면장애', text_auto='.1f')
+            st.plotly_chart(fig4, use_container_width=True)
+
+# ------------------------------------------
+# 탭 2: 수면 효율 (알코올, 운동 등)
+# ------------------------------------------
+with tab2:
+    if df2.empty:
+        st.warning("`Sleep_Efficiency.csv` 파일이 없습니다.")
+    else:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("평균 수면 효율", f"{df2['수면효율'].mean()*100:.1f}%")
+        c2.metric("깊은 수면 비중", f"{df2['깊은수면비율'].mean():.1f}%")
+        c3.metric("평균 자다 깨는 횟수", f"{df2['각성횟수'].mean():.1f}회")
+
+        st.markdown("---")
+
+        col_eff1, col_eff2 = st.columns(2)
+        with col_eff1:
+            st.subheader("🍺 알코올 섭취량별 수면 효율")
+            avg_eff = df2.groupby('알코올')['수면효율'].mean().reset_index()
+            avg_eff['수면효율'] = (avg_eff['수면효율'] * 100).round(1)
+            fig5 = px.line(avg_eff, x='알코올', y='수면효율', markers=True, text='수면효율')
+            st.plotly_chart(fig5, use_container_width=True)
+
+        with col_eff2:
+            st.subheader("🛌 평균 수면 단계 구성")
+            stages = pd.DataFrame({
+                '단계': ['깊은 수면', 'REM 수면', '얕은 수면'], 
+                '비중': [df2['깊은수면비율'].mean(), df2['REM비율'].mean(), df2['얕은수면비율'].mean()]
+            })
+            fig6 = px.pie(stages, values='비중', names='단계', hole=0.4)
+            st.plotly_chart(fig6, use_container_width=True)
