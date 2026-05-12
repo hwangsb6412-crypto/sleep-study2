@@ -204,7 +204,7 @@ with tab2:
                 
                 fig_factor = px.line(avg_factor, x='알코올', y='수면효율', markers=True, text='수면효율')
                 fig_factor.update_traces(textposition='top center', line_color='#ec4899', marker=dict(size=12, color='#ec4899'), textfont_size=14)
-                fig_factor.update_layout(yaxis_title="수면 효율 (%)", xaxis_title="알코올 (잔/회)")
+                fig_factor.update_layout(yaxis_title="수면 효율 (%)", xaxis_title="알코올 (회/주)")
                 
                 # Y축 여백 설정
                 min_y = avg_factor['수면효율'].min() - 3
