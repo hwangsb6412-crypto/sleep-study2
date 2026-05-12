@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import os
 
 # 1. 페이지 설정
 st.set_page_config(page_title="수면 & 라이프스타일 분석", page_icon="🌙", layout="wide")
 
 # 2. 데이터 로드 함수 (한글 컬럼 변환 포함)
 @st.cache_data
-def load_data(file):
-    df = pd.read_csv(file)
+def load_data(file_path):
+    df = pd.read_csv(file_path)
     # 실제 데이터셋의 영문 컬럼을 한글로 매핑
     column_mapping = {
         'Occupation': '직업',
@@ -28,13 +29,15 @@ def load_data(file):
 # 3. 메인 로직
 st.title("🌙 현대인 생활 습관 및 수면 질 분석 대시보드")
 
-# 파일 업로드 (Kaggle에서 받은 파일 사용)
-uploaded_file = st.sidebar.file_uploader("Kaggle CSV 파일을 업로드하세요", type=['csv'])
+# 깃허브에 함께 올린 파일 이름 (대소문자 주의!)
+DATA_FILE = 'Sleep_health_and_lifestyle_dataset.csv'
 
-if uploaded_file:
-    df = load_data(uploaded_file)
+# 파일이 존재하는지 확인 후 로드
+if os.path.exists(DATA_FILE):
+    df = load_data(DATA_FILE)
     
     # 사이드바 필터링
+    st.sidebar.header("데이터 필터")
     selected_occ = st.sidebar.multiselect("분석할 직업군 선택", df['직업'].unique(), default=df['직업'].unique())
     filtered_df = df[df['직업'].isin(selected_occ)]
 
@@ -47,7 +50,7 @@ if uploaded_file:
 
     st.divider()
 
-    # 그래프 레이아웃
+    # 그래프 레이아웃 (이후 코드는 동일)
     row1_col1, row1_col2 = st.columns(2)
 
     with row1_col1:
@@ -59,7 +62,6 @@ if uploaded_file:
 
     with row1_col2:
         st.subheader("🏃 일일 걸음 수 vs 스트레스 지수")
-        # 실제 데이터의 컬럼명에 맞게 수정
         fig2 = px.scatter(filtered_df, x='일일걸음수', y='스트레스지수', color='직업', 
                           trendline="ols", title="활동량과 스트레스의 관계")
         st.plotly_chart(fig2, use_container_width=True)
@@ -70,7 +72,6 @@ if uploaded_file:
 
     with row2_col1:
         st.subheader("⚖️ BMI 분류에 따른 수면 장애")
-        # BMI와 수면장애 빈도 분석
         fig3 = px.histogram(filtered_df, x="BMI분류", color="수면장애", barmode="group",
                             title="비만도와 수면 장애 현황")
         st.plotly_chart(fig3, use_container_width=True)
@@ -84,5 +85,5 @@ if uploaded_file:
     with st.expander("원본 데이터 확인"):
         st.dataframe(filtered_df)
 else:
-    st.info("왼쪽 사이드바에서 Kaggle CSV 파일을 업로드하면 분석이 시작됩니다.")
-    st.image("https://images.unsplash.com/photo-1511295742364-9119555d73a7?auto=format&fit=crop&q=80&w=1000", caption="파일을 기다리고 있어요!")
+    st.error(f"데이터 파일을 찾을 수 없습니다: {DATA_FILE}")
+    st.info("CSV 파일이 깃허브 저장소에 app.py와 같은 위치에 있는지 확인해주세요.")
