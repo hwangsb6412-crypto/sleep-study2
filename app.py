@@ -50,7 +50,8 @@ def load_data_1():
     file_path = 'Sleep_health_and_lifestyle_dataset.csv'
     if not os.path.exists(file_path): return pd.DataFrame()
     df = pd.read_csv(file_path)
-    df['Blood Pressure'] = df['Blood Pressure'].apply(categorize_bp)
+    # 혈압 카테고리화 추가 (탭 4용)
+    df['혈압상태'] = df['Blood Pressure'].apply(categorize_bp)
     df['BMI Category'] = df['BMI Category'].replace({'Normal Weight': '정상', 'Normal': '정상', 'Overweight': '과체중', 'Obese': '비만'})
     df['Sleep Disorder'] = df['Sleep Disorder'].fillna('없음').replace({'None': '없음', 'Sleep Apnea': '수면 무호흡증', 'Insomnia': '불면증'})
     occ_map = {
@@ -62,7 +63,7 @@ def load_data_1():
     return df.rename(columns={
         'Occupation': '직업', 'Sleep Duration': '수면시간', 'Quality of Sleep': '수면의질', 
         'Stress Level': '스트레스지수', 'BMI Category': 'BMI분류', 'Sleep Disorder': '수면장애', 
-        'Age': '나이', 'Blood Pressure': '혈압'
+        'Age': '나이', 'Blood Pressure': '혈압원문'
     })
 
 @st.cache_data
@@ -112,7 +113,12 @@ if df1.empty and df2.empty:
     st.error("⚠️ 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
     st.stop()
 
-tab1, tab2, tab3 = st.tabs(["📉 라이프스타일 분석 (생활 습관)", "💤 수면 효율 분석 (외부 요인)", "📋 나의 수면 점수 진단"])
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📉 라이프스타일 분석 (생활 습관)", 
+    "💤 수면 효율 분석 (외부 요인)", 
+    "📋 나의 수면 점수 진단",
+    "🩺 심혈관 건강 분석"
+])
 
 # ------------------------------------------
 # 탭 1: 생활 습관
@@ -128,7 +134,7 @@ with tab1:
     st.subheader("🎯 맞춤형 수면시간 & 수면의 질 분석")
     col_sel1, col_sel2 = st.columns([1, 3])
     with col_sel1:
-        target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압'])
+        target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압원문'], key='tab1_radio')
     with col_sel2:
         avg_dynamic = df1.groupby(target_category)[['수면시간', '수면의질']].mean().reset_index().sort_values('수면시간')
         fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면의질', text_auto='.1f', color_continuous_scale='Turbo', title=f"[{target_category}]별 현황")
@@ -171,7 +177,7 @@ with tab2:
         st.plotly_chart(fig_f, use_container_width=True)
 
 # ------------------------------------------
-# 탭 3: 나의 수면 점수 진단 (키/몸무게 입력 방식)
+# 탭 3: 나의 수면 점수 진단
 # ------------------------------------------
 with tab3:
     st.header("🔍 수면 건강 자가진단 서비스")
@@ -188,37 +194,21 @@ with tab3:
             user_ex = st.slider("일주일 운동 횟수 (회)", 0, 7, 3)
             user_sleep = st.number_input("일일 평균 수면 시간 (시간)", 0.0, 12.0, 7.0, step=0.5)
 
-        # BMI 자동 계산 로직
         bmi_val = u_weight / ((u_height / 100) ** 2)
-        if bmi_val < 18.5:
-            bmi_status = "저체중"
-        elif 18.5 <= bmi_val < 25:
-            bmi_status = "정상"
-        elif 25 <= bmi_val < 30:
-            bmi_status = "과체중"
-        else:
-            bmi_status = "비만"
-
+        bmi_status = "정상" if bmi_val < 18.5 else "정상" if bmi_val < 25 else "과체중" if bmi_val < 30 else "비만"
         st.info(f"💡 계산된 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
 
         if st.button("내 수면 점수 확인하기 ✨"):
             base_score = 90
-            
-            # BMI 기반 점수 계산
             if bmi_status == "과체중": base_score -= 7
             elif bmi_status == "비만": base_score -= 18
-            elif bmi_status == "저체중": base_score -= 3
-            
             if user_smoke == "흡연": base_score -= 12
-            
             base_score -= (user_alc * 4)
             base_score += (user_ex * 5)
-            
             if 7 <= user_sleep <= 8.5: base_score += 10
             elif user_sleep < 6 or user_sleep > 10: base_score -= 10
             
             final_score = max(0, min(100, base_score))
-            
             st.markdown("---")
             st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
             
@@ -228,8 +218,54 @@ with tab3:
                 st.warning("⚖️ 보통입니다. 운동량을 조금 더 늘리거나 음주를 줄여보세요.")
             else:
                 st.error("🚨 개선이 시급합니다. 수면 효율을 높이기 위한 생활 습관 교정을 추천드립니다.")
+
+# ------------------------------------------
+# 탭 4: 심혈관 건강 분석 (새로 추가됨)
+# ------------------------------------------
+with tab4:
+    st.header("🩺 수면 질과 심혈관 건강(고혈압) 상관관계")
+    st.markdown("수면 점수(수면의 질)가 낮을수록 고혈압 위험이 어떻게 변하는지 실제 데이터를 통해 확인합니다.")
+    
+    # 1. 수면의 질 점수별 고혈압 비율 계산
+    bp_data = df1.groupby('수면의질')['혈압상태'].value_counts(normalize=True).unstack().fillna(0) * 100
+    
+    if '고혈압' in bp_data.columns:
+        hp_rate = bp_data[['고혈압']].reset_index()
+        
+        c_hp1, c_hp2 = st.columns([2, 1])
+        
+        with c_hp1:
+            fig_hp = px.line(hp_rate, x='수면의질', y='고혈압', markers=True,
+                             title="수면의 질 점수에 따른 고혈압군 비율(%)",
+                             color_discrete_sequence=['#ef4444'])
+            fig_hp.update_layout(xaxis_title="수면의 질 점수 (1-10점)", yaxis_title="고혈압군 비율 (%)")
+            st.plotly_chart(fig_hp, use_container_width=True)
             
-            st.info(f"💡 인사이트: {bmi_status} 상태에서 운동 빈도를 높이면 깊은 수면 단계 진입이 수월해진다는 데이터 결과가 있습니다.")
+        with c_hp2:
+            st.markdown("#### 💡 분석 인사이트")
+            st.write("그래프를 보면 **수면의 질 점수가 낮아질수록 고혈압군에 속하는 인원의 비중이 급격히 증가**하는 경향을 보입니다.")
+            st.warning("특히 수면의 질이 4~5점대 이하인 경우, 8점대 이상의 숙면 집단에 비해 고혈압 위험이 유의미하게 높게 관찰됩니다.")
+            st.info("수면 부족은 자율신경계 불균형을 초래하여 혈압 상승의 직접적인 원인이 될 수 있음을 시사합니다.")
+            
+        st.markdown("---")
+        st.subheader("🧬 스트레스 및 BMI와 혈압의 복합 관계")
+        col_hp_sub1, col_hp_sub2 = st.columns(2)
+        
+        with col_hp_sub1:
+            # 스트레스와 혈압 상태
+            fig_stress_bp = px.histogram(df1, x="스트레스지수", color="혈압상태", barmode="group",
+                                         title="스트레스 지수별 혈압 상태 분포",
+                                         color_discrete_map={'정상혈압':'#22c55e', '주의혈압':'#34d399', '고혈압 전단계':'#fbbf24', '고혈압':'#ef4444'})
+            st.plotly_chart(fig_stress_bp, use_container_width=True)
+            
+        with col_hp_sub2:
+            # BMI와 혈압 상태
+            fig_bmi_bp = px.histogram(df1, x="BMI분류", color="혈압상태", barmode="group",
+                                      title="BMI 분류별 혈압 상태 분포",
+                                      color_discrete_map={'정상혈압':'#22c55e', '주의혈압':'#34d399', '고혈압 전단계':'#fbbf24', '고혈압':'#ef4444'})
+            st.plotly_chart(fig_bmi_bp, use_container_width=True)
+    else:
+        st.warning("현재 선택된 데이터 범위 내에 '고혈압' 데이터가 부족하여 분석 그래프를 표시할 수 없습니다. 사이드바 필터를 조절해 보세요.")
 
 # 원본 데이터 확인
 with st.expander("데이터 원본 상세보기"):
