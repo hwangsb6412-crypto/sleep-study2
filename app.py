@@ -22,10 +22,15 @@ def load_data_1():
         return pd.DataFrame()
         
     df = pd.read_csv(file_path)
-    df['BMI Category'] = df['BMI Category'].replace({'Normal Weight': '정상', 'Normal': '정상', 'Overweight': '과체중', 'Obese': '비만'})
-    df['Sleep Disorder'] = df['Sleep Disorder'].fillna('없음').replace({'None': '없음', 'Sleep Apnea': '수면 무호흡증', 'Insomnia': '불면증'})
     
-    # [추가] 혈압 데이터 처리: "120/80" -> 수축기 혈압 기준 분류
+    # 카테고리 한글 변환
+    df['BMI Category'] = df['BMI Category'].replace({'Normal Weight': '정상', 'Normal': '정상', 'Overweight': '과체중', 'Obese': '비만'})
+    
+    # 결측치 처리 및 변환
+    df['Sleep Disorder'] = df['Sleep Disorder'].fillna('없음')
+    df['Sleep Disorder'] = df['Sleep Disorder'].replace({'None': '없음', 'Sleep Apnea': '수면 무호흡증', 'Insomnia': '불면증'})
+    
+    # [혈압 처리 로직] 수축기 혈압 기준 분류
     def categorize_bp(bp):
         try:
             systolic = int(bp.split('/')[0])
@@ -58,6 +63,7 @@ def load_data_2():
         
     df = pd.read_csv(file_path)
     df = df.fillna(0)
+    
     df['Smoking status'] = df['Smoking status'].replace({'Yes': '흡연', 'No': '비흡연'})
     
     return df.rename(columns={
@@ -67,26 +73,29 @@ def load_data_2():
         'Smoking status': '흡연여부', 'Age': '나이'
     })
 
-df1_raw = load_data_1()
-df2_raw = load_data_2()
-
-if df1_raw.empty and df2_raw.empty:
-    st.error("⚠️ 데이터를 불러오지 못했습니다.")
-    st.stop()
+try:
+    df1_raw = load_data_1()
+    df2_raw = load_data_2()
+except Exception as e:
+    st.error(f"데이터를 읽는 중 오류가 발생했습니다: {e}")
+    df1_raw = pd.DataFrame()
+    df2_raw = pd.DataFrame()
 
 # ==========================================
 # 3. 사이드바 동적 필터
 # ==========================================
 st.sidebar.title("🎮 동적 필터 조절")
 
-min_age = int(min(df1_raw['나이'].min(), df2_raw['나이'].min()))
-max_age = int(max(df1_raw['나이'].max(), df2_raw['나이'].max()))
+# 나이 필터
+min_age = int(min(df1_raw['나이'].min() if not df1_raw.empty else 10, df2_raw['나이'].min() if not df2_raw.empty else 10))
+max_age = int(max(df1_raw['나이'].max() if not df1_raw.empty else 80, df2_raw['나이'].max() if not df2_raw.empty else 80))
 age_range = st.sidebar.slider("분석 연령대 설정", min_age, max_age, (min_age, max_age))
 
-all_occupations = sorted(df1_raw['직업'].unique().tolist())
+# 직업 필터
+all_occupations = sorted(df1_raw['직업'].unique().tolist()) if not df1_raw.empty else []
 selected_occ = st.sidebar.multiselect("분석 직업군 선택", all_occupations, default=all_occupations)
 
-# 필터링 적용
+# 필터링 적용된 데이터셋
 df1 = df1_raw[(df1_raw['나이'] >= age_range[0]) & (df1_raw['나이'] <= age_range[1]) & (df1_raw['직업'].isin(selected_occ))].copy()
 df2 = df2_raw[(df2_raw['나이'] >= age_range[0]) & (df2_raw['나이'] <= age_range[1])].copy()
 
@@ -96,50 +105,115 @@ df2 = df2_raw[(df2_raw['나이'] >= age_range[0]) & (df2_raw['나이'] <= age_ra
 st.title("📊 수면 건강 핵심 데이터 대시보드")
 
 if df1.empty and df2.empty:
-    st.warning("선택한 조건에 맞는 데이터가 없습니다.")
+    st.error("⚠️ 선택한 조건에 맞는 데이터를 불러올 수 없습니다. 필터 범위를 확인해 주세요.")
     st.stop()
 
-tab1, tab2 = st.tabs(["📉 라이프스타일 분석", "💤 수면 효율 분석"])
+tab1, tab2 = st.tabs(["📉 라이프스타일 분석 (생활 습관)", "💤 수면 효율 분석 (외부 요인)"])
 
+# ------------------------------------------
+# 탭 1: 생활 습관 (인원수 표시 + 혈압기준 추가)
+# ------------------------------------------
 with tab1:
-    if not df1.empty:
+    if df1.empty:
+        st.warning("조건에 맞는 `Sleep_health_and_lifestyle_dataset.csv` 데이터가 없습니다.")
+    else:
+        # 상단 Metric 지표 (모집단 인원 포함 4개)
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("👥 분석 대상", f"{len(df1)}명")
-        m2.metric("😴 평균 수면시간", f"{df1['수면시간'].mean():.1f}시간")
-        m3.metric("🔥 평균 스트레스", f"{df1['스트레스지수'].mean():.1f}점")
-        m4.metric("🌟 평균 수면의 질", f"{df1['수면의질'].mean():.1f}점")
+        m1.metric("👥 분석 대상(모집단)", f"{len(df1)}명")
+        m2.metric("평균 수면 시간", f"{df1['수면시간'].mean():.1f}시간")
+        m3.metric("평균 스트레스 지수", f"{df1['스트레스지수'].mean():.1f}점")
+        m4.metric("평균 수면의 질", f"{df1['수면의질'].mean():.1f}점")
         
         st.markdown("---")
         
-        # [수정 포인트] 혈압기준 옵션 추가
-        st.subheader("🎯 기준별 수면시간 분석")
+        # 동적 기준별 수면시간 분석 (혈압기준 포함)
+        st.subheader("🎯 선택한 기준별 수면시간 집중 분석")
         target_category = st.selectbox(
-            "분석 기준 선택:", 
-            options=['직업', 'BMI분류', '스트레스지수', '혈압기준'], # 여기에 혈압기준 추가
+            "무엇에 따른 수면시간을 확인하시겠습니까?",
+            options=['직업', 'BMI분류', '스트레스지수', '혈압기준'],
             index=0
         )
+        
         avg_dynamic = df1.groupby(target_category)['수면시간'].mean().reset_index().sort_values('수면시간')
-        st.plotly_chart(px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면시간', text_auto='.1f', color_continuous_scale='Viridis'), use_container_width=True)
+        fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', 
+                         color='수면시간', text_auto='.1f', color_continuous_scale='Viridis',
+                         title=f"[{target_category}]별 평균 수면 시간")
+        st.plotly_chart(fig_dyn, use_container_width=True)
         
         st.markdown("---")
-        
-        # 나머지 기존 그래프 유지
-        c_left, c_right = st.columns(2)
-        with c_left:
+
+        # 기존 그래프들
+        col_left, col_right = st.columns(2)
+        with col_left:
             st.subheader("👨‍💻 직업별 평균 수면 시간")
-            st.plotly_chart(px.bar(df1.groupby('직업')['수면시간'].mean().reset_index().sort_values('수면시간'), x='수면시간', y='직업', orientation='h', color='수면시간', text_auto='.1f', color_continuous_scale='Blues'), use_container_width=True)
-        with c_right:
+            avg_sleep = df1.groupby('직업')['수면시간'].mean().reset_index().sort_values('수면시간')
+            fig1 = px.bar(avg_sleep, x='수면시간', y='직업', orientation='h', color='수면시간', text_auto='.1f', color_continuous_scale='Blues')
+            st.plotly_chart(fig1, use_container_width=True)
+
+        with col_right:
             st.subheader("🔥 직업별 평균 스트레스")
-            st.plotly_chart(px.bar(df1.groupby('직업')['스트레스지수'].mean().reset_index().sort_values('스트레스지수'), x='스트레스지수', y='직업', orientation='h', color='스트레스지수', text_auto='.1f', color_continuous_scale='Reds'), use_container_width=True)
+            avg_stress = df1.groupby('직업')['스트레스지수'].mean().reset_index().sort_values('스트레스지수')
+            fig2 = px.bar(avg_stress, x='스트레스지수', y='직업', orientation='h', color='스트레스지수', text_auto='.1f', color_continuous_scale='Reds')
+            st.plotly_chart(fig2, use_container_width=True)
 
         st.markdown("---")
         
-        cl1, cl2 = st.columns(2)
-        with cl1:
+        col_low1, col_low2 = st.columns(2)
+        with col_low1:
             st.subheader("⚖️ 체중분류별 수면 장애 현황")
-            st.plotly_chart(px.bar(df1.groupby(['BMI분류', '수면장애']).size().reset_index(name='인원수'), x='BMI분류', y='인원수', color='수면장애', barmode='group', text_auto=True), use_container_width=True)
-        with cl2:
+            fig3 = px.bar(df1.groupby(['BMI분류', '수면장애']).size().reset_index(name='인원수'), x='BMI분류', y='인원수', color='수면장애', barmode='group', text_auto=True)
+            st.plotly_chart(fig3, use_container_width=True)
+            
+        with col_low2:
             st.subheader("🌙 수면 장애별 수면의 질 점수")
-            st.plotly_chart(px.bar(df1.groupby('수면장애')['수면의질'].mean().reset_index(), x='수면장애', y='수면의질', color='수면장애', text_auto='.1f'), use_container_width=True)
+            avg_qual = df1.groupby('수면장애')['수면의질'].mean().reset_index()
+            fig4 = px.bar(avg_qual, x='수면장애', y='수면의질', color='수면장애', text_auto='.1f')
+            st.plotly_chart(fig4, use_container_width=True)
 
-# 탭 2 생략 (변경 사항 없음)
+# ------------------------------------------
+# 탭 2: 수면 효율 (인원수 표시 추가)
+# ------------------------------------------
+with tab2:
+    if df2.empty:
+        st.warning("조건에 맞는 `Sleep_Efficiency.csv` 데이터가 없습니다.")
+    else:
+        # 상단 Metric 지표 (모집단 인원 포함 4개)
+        m5, m6, m7, m8 = st.columns(4)
+        m5.metric("👥 분석 대상(모집단)", f"{len(df2)}명")
+        m6.metric("평균 수면 효율", f"{df2['수면효율'].mean()*100:.1f}%")
+        m7.metric("깊은 수면 비중", f"{df2['깊은수면비율'].mean():.1f}%")
+        m8.metric("평균 자다 깨는 횟수", f"{df2['각성횟수'].mean():.1f}회")
+
+        st.markdown("---")
+
+        col_eff1, col_eff2 = st.columns(2)
+        with col_eff1:
+            st.subheader("🍺 알코올 섭취량별 수면 효율")
+            avg_eff = df2.groupby('알코올')['수면효율'].mean().reset_index()
+            avg_eff['수면효율'] = (avg_eff['수면효율'] * 100).round(1)
+            fig5 = px.line(avg_eff, x='알코올', y='수면효율', markers=True, text='수면효율',
+                           labels={'알코올': '음주량', '수면효율': '수면 효율 (%)'})
+            st.plotly_chart(fig5, use_container_width=True)
+
+        with col_eff2:
+            st.subheader("🛌 평균 수면 단계 구성")
+            stages = pd.DataFrame({'단계': ['깊은 수면', 'REM 수면', '얕은 수면'], '비중': [df2['깊은수면비율'].mean(), df2['REM비율'].mean(), df2['얕은수면비율'].mean()]})
+            fig6 = px.pie(stages, values='비중', names='단계', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+            st.plotly_chart(fig6, use_container_width=True)
+
+        st.markdown("---")
+
+        col_eff3, col_eff4 = st.columns(2)
+        with col_eff3:
+            st.subheader("🚬 흡연 여부와 각성 횟수")
+            avg_awake = df2.groupby('흡연여부')['각성횟수'].mean().reset_index()
+            fig7 = px.bar(avg_awake, x='흡연여부', y='각성횟수', color='흡연여부', text_auto='.1f')
+            st.plotly_chart(fig7, use_container_width=True)
+
+        with col_eff4:
+            st.subheader("🏃 주당 운동 빈도와 깊은 수면")
+            avg_deep = df2.groupby('운동빈도')['깊은수면비율'].mean().reset_index()
+            avg_deep['깊은수면비율'] = avg_deep['깊은수면비율'].round(1)
+            fig8 = px.line(avg_deep, x='운동빈도', y='깊은수면비율', markers=True, text='깊은수면비율',
+                           labels={'운동빈도': '주당 운동 횟수(회)', '깊은수면비율': '깊은 수면 비율 (%)'})
+            st.plotly_chart(fig8, use_container_width=True)
