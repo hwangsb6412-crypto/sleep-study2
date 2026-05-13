@@ -288,7 +288,7 @@ with tab5:
         with col_calc1:
             st.subheader("📅 나의 상태 및 일정")
             target_wakeup = st.time_input("내일 몇 시에 일어나야 하나요?", value=pd.to_datetime("07:00").time())
-            user_quality = st.slider("평소 본인의 수면 만족도(점수)", 1, 10, 7)
+            user_quality = st.slider("평소 본인의 수면 점수", 1, 10, 7)
             today_steps = st.number_input("오늘 총 몇 걸음 걸으셨나요?", 0, 30000, 6000)
             
             # [추가] 카페인 및 흡연 여부 체크
