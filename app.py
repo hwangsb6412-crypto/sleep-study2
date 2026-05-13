@@ -63,8 +63,8 @@ def load_data_1():
     # 이 부분에 'Daily Steps': '일일걸음수'가 반드시 들어가야 합니다!
     return df.rename(columns={
         'Occupation': '직업', 'Sleep Duration': '수면시간', 'Quality of Sleep': '수면의질', 
-        'Stress Level': '스트레스지수', 'BMI Category': 'BMI분류', 'Sleep Disorder': '수면장애', 
-        'Age': '나이', 'Blood Pressure': '혈압원문', 'Daily Steps': '일일걸음수'
+        'Stress Level': '스트레스지수', 'BMI Category': 'BMI', 'Sleep Disorder': '수면장애', 
+        'Age': '나이', 'Blood Pressure': '혈압', 'Daily Steps': '일일걸음수'
     })
 
 @st.cache_data
