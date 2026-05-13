@@ -138,7 +138,7 @@ with tab1:
         target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압원문'], key='tab1_radio')
     with col_sel2:
         avg_dynamic = df1.groupby(target_category)[['수면시간', '수면의질']].mean().reset_index().sort_values('수면시간')
-        fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면의질', text_auto='.1f', color_continuous_scale='Turbo', title=f"[{target_category}] 현황")
+        fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면의질', text_auto='.1f', color_continuous_scale='Turbo', title=f"{target_category} 현황")
         st.plotly_chart(fig_dyn, use_container_width=True)
 
     st.subheader("⚖️ 체중(BMI) 분류별 수면 장애 현황")
