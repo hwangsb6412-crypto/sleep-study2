@@ -50,7 +50,6 @@ def load_data_1():
     file_path = 'Sleep_health_and_lifestyle_dataset.csv'
     if not os.path.exists(file_path): return pd.DataFrame()
     df = pd.read_csv(file_path)
-    # 혈압 카테고리화 추가 (탭 분석용)
     df['혈압상태'] = df['Blood Pressure'].apply(categorize_bp)
     df['BMI Category'] = df['BMI Category'].replace({'Normal Weight': '정상', 'Normal': '정상', 'Overweight': '과체중', 'Obese': '비만'})
     df['Sleep Disorder'] = df['Sleep Disorder'].fillna('없음').replace({'None': '없음', 'Sleep Apnea': '수면 무호흡증', 'Insomnia': '불면증'})
@@ -60,10 +59,12 @@ def load_data_1():
         'Scientist': '과학자', 'Lawyer': '변호사', 'Salesperson': '영업직', 'Manager': '관리자'
     }
     df['Occupation'] = df['Occupation'].map(occ_map).fillna(df['Occupation'])
+    
+    # 이 부분에 'Daily Steps': '일일걸음수'가 반드시 들어가야 합니다!
     return df.rename(columns={
         'Occupation': '직업', 'Sleep Duration': '수면시간', 'Quality of Sleep': '수면의질', 
         'Stress Level': '스트레스지수', 'BMI Category': 'BMI분류', 'Sleep Disorder': '수면장애', 
-        'Age': '나이', 'Blood Pressure': '혈압원문'
+        'Age': '나이', 'Blood Pressure': '혈압원문', 'Daily Steps': '일일걸음수'
     })
 
 @st.cache_data
@@ -275,11 +276,11 @@ with st.expander("데이터 원본 상세보기"):
 
 
 # ------------------------------------------
-# 탭 5: 최적 수면 골든타임 계산기 (데이터 분석 기반 예측)
+# 탭 5: 최적 수면 골든타임 계산기
 # ------------------------------------------
 with tab5:
     st.header("⏰ 데이터 기반 수면 골든타임 계산기")
-    st.markdown("내일 기상 시간과 오늘 활동량을 입력하면, 데이터상 가장 수면 효율이 높았던 최적의 취침 시간을 계산해 드립니다.")
+    st.markdown("내일 기상 시간과 오늘 활동량을 입력하면, 데이터 분석 결과에 따른 최적의 취침 시간을 추천합니다.")
 
     with st.container(border=True):
         col_calc1, col_calc2 = st.columns(2)
@@ -287,61 +288,48 @@ with tab5:
         with col_calc1:
             st.subheader("📅 내 일정 및 활동")
             target_wakeup = st.time_input("내일 몇 시에 일어나야 하나요?", value=pd.to_datetime("07:00").time())
-            today_steps = st.number_input("오늘 총 몇 걸음 걸으셨나요? (Daily Steps)", 0, 30000, 6000)
-            has_coffee = st.checkbox("오늘 오후에 카페인을 섭취했나요?")
+            # 걸음수 데이터 존재 여부 확인 후 입력창 표시
+            today_steps = st.number_input("오늘 총 몇 걸음 걸으셨나요?", 0, 30000, 6000)
+            has_coffee = st.checkbox("오늘 오후에 카페인을 마셨나요?")
 
         with col_calc2:
-            st.subheader("📊 데이터 분석 가이드")
-            # 데이터 분석 기반 적정 수면 시간 도출 (수면의 질 8점 이상의 평균 시간)
+            st.subheader("📊 분석 기반 가이드")
             base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 7.5
             
-            # 활동량에 따른 보정 (걸음수가 많으면 회복을 위해 더 많이 자야 함)
+            adjustment = 0
             if today_steps >= 10000:
-                adjustment = 0.5 # 30분 추가
-                st.info("🏃 오늘 활동량이 많으시네요! 데이터 기반으로 30분의 추가 회복 수면을 권장합니다.")
-            elif today_steps < 3000:
-                adjustment = -0.5 # 30분 감소
-                st.warning("🛋️ 활동량이 평소보다 적습니다. 평소보다 30분 늦게 누워도 수면 효율이 유지될 수 있습니다.")
-            else:
-                adjustment = 0
-
-            # 카페인 패널티 (각성 횟수 증가 데이터 반영)
+                adjustment += 0.5
+                st.info("🏃 오늘 활동량이 많으시네요! 30분의 추가 회복 수면을 권장합니다.")
             if has_coffee:
-                st.warning("☕ 카페인은 잠에서 깨는 횟수를 평균 1.5회 증가시킵니다. 평소보다 20분 일찍 취침을 준비하세요.")
                 adjustment += 0.3
+                st.warning("☕ 카페인 대사를 고려해 평소보다 20분 일찍 취침을 준비하세요.")
 
             recommended_duration = base_sleep_hr + adjustment
 
         st.divider()
         
-        # 취침 시간 계산 로직
         from datetime import datetime, timedelta
-        
-        # 오늘 날짜와 기상 시간 합치기
         now = datetime.now()
         wakeup_dt = datetime.combine(now.date() + timedelta(days=1), target_wakeup)
-        
-        # 기상 시간에서 추천 수면 시간 빼기
         bedtime_dt = wakeup_dt - timedelta(hours=recommended_duration)
         
-        # 시각적 피드백
         res_col1, res_col2 = st.columns([1, 2])
-        with res_col1:
-            st.metric("추천 수면 시간", f"{recommended_duration:.1f}시간")
-        
+        res_col1.metric("권장 수면 시간", f"{recommended_duration:.1f}시간")
         with res_col2:
-            st.subheader(f"✅ 당신의 최적 취침 시각은  :blue[{bedtime_dt.strftime('%H시 %M분')}] 입니다.")
-            
-            # 2번 아이디어(아침형/저녁형) 데이터 인사이트 추가
-            if bedtime_dt.hour >= 1 or bedtime_dt.hour <= 3:
-                st.error("🚨 경고: 새벽 1시 이후 취침은 데이터상 '깊은 수면' 비중을 15% 이상 감소시키는 것으로 나타났습니다.")
-            else:
-                st.success("✨ 이 시간에 취침하면 당신의 연령대에서 가장 높은 수면 효율을 기대할 수 있습니다.")
+            st.subheader(f"✅ 최적 취침 시각: :blue[{bedtime_dt.strftime('%H시 %M분')}]")
+            if bedtime_dt.hour >= 1 and bedtime_dt.hour <= 4:
+                st.error("🚨 경고: 새벽 1시 이후 취침은 '깊은 수면' 비중을 낮출 수 있습니다.")
 
-    # 추가 시각화: 활동량(Steps)과 수면의 질 상관관계
+    # 그래프 부분 오류 방지를 위해 dropna() 적용
     st.markdown("---")
-    st.subheader("📈 실제 데이터: 일일 걸음수와 수면의 질")
-    fig_steps = px.scatter(df1, x='일일걸음수', y='수면의질', color='직업', 
-                           size='수면시간', trendline="ols",
-                           title="하루에 많이 걸을수록 수면의 질이 높아질까?")
-    st.plotly_chart(fig_steps, use_container_width=True)
+    st.subheader("📈 실제 데이터: 활동량과 수면의 질")
+    if '일일걸음수' in df1.columns:
+        # 데이터가 있는 것만 필터링하여 그래프 생성
+        df_plot = df1.dropna(subset=['일일걸음수', '수면의질'])
+        if not df_plot.empty:
+            fig_steps = px.scatter(df_plot, x='일일걸음수', y='수면의질', color='직업', 
+                                   size='수면시간', trendline="ols",
+                                   title="하루 걸음수가 수면의 질에 미치는 영향")
+            st.plotly_chart(fig_steps, use_container_width=True)
+    else:
+        st.warning("데이터셋에 '일일걸음수' 컬럼이 없어 그래프를 표시할 수 없습니다. load_data_1 함수를 확인해 주세요.")
