@@ -257,7 +257,7 @@ with tab4:
 
        # 버튼을 오른쪽으로 밀기 위해 컬럼을 나눕니다. 
         # 비율을 [4, 1]로 주면 버튼이 오른쪽 끝 20% 영역에 위치하게 됩니다.
-        btn_space, btn_col = st.columns([4, 1])
+        btn_space, btn_col = st.columns([2, 2])
         
         with btn_col:
             submit_btn = st.button("내 수면 점수 확인하기 ✨")
