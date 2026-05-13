@@ -135,7 +135,7 @@ with tab1:
     st.subheader("🎯 맞춤형 수면시간 & 수면의 질 분석")
     col_sel1, col_sel2 = st.columns([1, 3])
     with col_sel1:
-        target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압원문'], key='tab1_radio')
+        target_category = st.radio("분석 기준", options=['직업', 'BMI', '스트레스지수', '혈압'], key='tab1_radio')
     with col_sel2:
         avg_dynamic = df1.groupby(target_category)[['수면시간', '수면의질']].mean().reset_index().sort_values('수면시간')
         fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면의질', text_auto='.1f', color_continuous_scale='Turbo', title=f"{target_category} ")
