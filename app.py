@@ -255,7 +255,14 @@ with tab4:
         bmi_status = "정상" if bmi_val < 18.5 else "정상" if bmi_val < 25 else "과체중" if bmi_val < 30 else "비만"
         st.info(f" 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
 
-        if st.button("내 수면 점수 확인하기 "):
+       # 버튼을 오른쪽으로 밀기 위해 컬럼을 나눕니다. 
+        # 비율을 [4, 1]로 주면 버튼이 오른쪽 끝 20% 영역에 위치하게 됩니다.
+        btn_space, btn_col = st.columns([4, 1])
+        
+        with btn_col:
+            submit_btn = st.button("내 수면 점수 확인하기 ✨")
+
+        if submit_btn:
             base_score = 90
             if bmi_status == "과체중": base_score -= 7
             elif bmi_status == "비만": base_score -= 18
@@ -267,14 +274,14 @@ with tab4:
             
             final_score = max(0, min(100, base_score))
             st.markdown("---")
-            st.subheader(f" 예상 수면 점수: **{final_score}점**")
+            st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
             
             if final_score >= 85:
-                st.success(" 아주 좋은 습관입니다! 숙면 가능성이 매우 높습니다.")
+                st.success("🎉 아주 좋은 습관입니다! 숙면 가능성이 매우 높습니다.")
             elif final_score >= 65:
-                st.warning(" 보통입니다. 운동량을 늘리거나 음주를 줄여보세요.")
+                st.warning("⚖️ 보통입니다. 운동량을 늘리거나 음주를 줄여보세요.")
             else:
-                st.error(" 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
+                st.error("🚨 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
 
 # ------------------------------------------
 # 탭 5: 최적 수면 골든타임 계산기 (기능 100% 복구 + 3컬럼 레이아웃)
