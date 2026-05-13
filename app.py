@@ -277,7 +277,7 @@ with tab4:
                 st.error(" 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
 
 # ------------------------------------------
-# 탭 5: 최적 수면 골든타임 계산기 (레이아웃 위치 수정본)
+# 탭 5: 최적 수면 골든타임 계산기 (레이아웃 및 라이브러리 오류 수정본)
 # ------------------------------------------
 with tab5:
     st.header("⏰ 데이터 기반 수면 골든타임 계산기")
@@ -299,7 +299,7 @@ with tab5:
             with c_col2:
                 is_smoking_calc = st.checkbox("흡연 여부(니코틴)")
 
-        # 계산 로직 (출력을 위해 위에서 계산)
+        # --- 계산 로직 (NameError 방지 처리) ---
         base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 7.5
         adj = 0.0
         if user_quality_slider <= 4: adj += 1.0
@@ -309,7 +309,10 @@ with tab5:
         if is_smoking_calc: adj += 0.4
         
         recommended_duration = base_sleep_hr + adj
-        wakeup_dt = datetime.combine(datetime.now().date() + timedelta(days=1), target_wakeup)
+        
+        # 날짜 계산 (datetime.combine 오류 수정)
+        today_date = datetime.now().date()
+        wakeup_dt = datetime.combine(today_date + timedelta(days=1), target_wakeup)
         bedtime_dt = wakeup_dt - timedelta(hours=recommended_duration)
 
         with col_result:
