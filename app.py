@@ -64,7 +64,7 @@ def load_data_1():
     return df.rename(columns={
         'Occupation': '직업', 'Sleep Duration': '수면시간', 'Quality of Sleep': '수면의질', 
         'Stress Level': '스트레스지수', 'BMI Category': 'BMI분류', 'Sleep Disorder': '수면장애', 
-        'Age': '나이', 'Blood Pressure': '혈압상태', 'Daily Steps': '일일걸음수'
+        'Age': '나이', 'Blood Pressure': '혈압원문', 'Daily Steps': '일일걸음수'
     })
 
 @st.cache_data
@@ -114,7 +114,6 @@ if df1.empty and df2.empty:
     st.error("⚠️ 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
     st.stop()
 
-# 탭 순서 교체: 3번이 심혈관 분석, 4번이 자가진단
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📉 라이프스타일 분석 (생활 습관)", 
     "💤 수면 효율 분석 (외부 요인)", 
@@ -122,7 +121,6 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📋 나의 수면 점수 진단",
     "⏰ 최적 수면 골든타임"
 ])
-
 # ------------------------------------------
 # 탭 1: 생활 습관
 # ------------------------------------------
@@ -137,7 +135,7 @@ with tab1:
     st.subheader("🎯 맞춤형 수면시간 & 수면의 질 분석")
     col_sel1, col_sel2 = st.columns([1, 3])
     with col_sel1:
-        target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압상태'], key='tab1_radio')
+        target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압원문'], key='tab1_radio')
     with col_sel2:
         avg_dynamic = df1.groupby(target_category)[['수면시간', '수면의질']].mean().reset_index().sort_values('수면시간')
         fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면의질', text_auto='.1f', color_continuous_scale='Turbo', title=f"[{target_category}]별 현황")
@@ -274,7 +272,6 @@ with tab4:
 with st.expander("데이터 원본 상세보기"):
     st.dataframe(df1.head())
 
-
 # ------------------------------------------
 # 탭 5: 최적 수면 골든타임 계산기 (사용자 맞춤형)
 # ------------------------------------------
@@ -288,7 +285,7 @@ with tab5:
         with col_calc1:
             st.subheader("📅 나의 상태 및 일정")
             target_wakeup = st.time_input("내일 몇 시에 일어나야 하나요?", value=pd.to_datetime("07:00").time())
-            user_quality = st.slider("평소 본인의 수면 점수", 1, 10, 7)
+            user_quality = st.slider("평소 본인의 수면 만족도(점수)", 1, 10, 7)
             today_steps = st.number_input("오늘 총 몇 걸음 걸으셨나요?", 0, 30000, 6000)
             
             # [추가] 카페인 및 흡연 여부 체크
