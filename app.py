@@ -285,7 +285,7 @@ with tab5:
 
     with st.container(border=True):
         # 입력창과 결과창 사이에 여백을 주어 시각적 쾌적함 제공
-        col_calc1, col_empty, col_calc2 = st.columns([10, 2, 10]) 
+        col_calc1, col_empty, col_calc2 = st.columns([8, 4, 10]) 
         
         with col_calc1:
             st.subheader("📅 나의 상태 및 일정")
