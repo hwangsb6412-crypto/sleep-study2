@@ -50,7 +50,7 @@ def load_data_1():
     file_path = 'Sleep_health_and_lifestyle_dataset.csv'
     if not os.path.exists(file_path): return pd.DataFrame()
     df = pd.read_csv(file_path)
-    # 혈압 카테고리화 추가 (탭 4용)
+    # 혈압 카테고리화 추가 (탭 분석용)
     df['혈압상태'] = df['Blood Pressure'].apply(categorize_bp)
     df['BMI Category'] = df['BMI Category'].replace({'Normal Weight': '정상', 'Normal': '정상', 'Overweight': '과체중', 'Obese': '비만'})
     df['Sleep Disorder'] = df['Sleep Disorder'].fillna('없음').replace({'None': '없음', 'Sleep Apnea': '수면 무호흡증', 'Insomnia': '불면증'})
@@ -105,7 +105,7 @@ else:
     df1, df2 = df1_raw, df2_raw
 
 # ==========================================
-# 4. 메인 UI 구성
+# 4. 메인 UI 구성 (탭 순서 변경)
 # ==========================================
 st.title("📊 수면 건강 핵심 데이터 대시보드")
 
@@ -113,11 +113,12 @@ if df1.empty and df2.empty:
     st.error("⚠️ 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
     st.stop()
 
+# 탭 순서 교체: 3번이 심혈관 분석, 4번이 자가진단
 tab1, tab2, tab3, tab4 = st.tabs([
     "📉 라이프스타일 분석 (생활 습관)", 
     "💤 수면 효율 분석 (외부 요인)", 
-    "📋 나의 수면 점수 진단",
-    "🩺 심혈관 건강 분석"
+    "🩺 심혈관 건강 분석",
+    "📋 나의 수면 점수 진단"
 ])
 
 # ------------------------------------------
@@ -175,8 +176,9 @@ with tab2:
             avg_f = df2.groupby('흡연여부')['각성횟수'].mean().reset_index()
             fig_f = px.bar(avg_f, x='흡연여부', y='각성횟수', color='흡연여부', text_auto='.1f', title="흡연과 각성 횟수")
         st.plotly_chart(fig_f, use_container_width=True)
+
 # ------------------------------------------
-# 탭 3: 심혈관 건강 분석 (새로 추가됨)
+# 탭 3: 심혈관 건강 분석 (위치 변경)
 # ------------------------------------------
 with tab3:
     st.header("🩺 수면 질과 심혈관 건강(고혈압) 상관관계")
@@ -223,15 +225,11 @@ with tab3:
     else:
         st.warning("현재 선택된 데이터 범위 내에 '고혈압' 데이터가 부족하여 분석 그래프를 표시할 수 없습니다. 사이드바 필터를 조절해 보세요.")
 
-# 원본 데이터 확인
-with st.expander("데이터 원본 상세보기"):
-    st.dataframe(df1.head())
-
 # ------------------------------------------
-# 탭 4: 나의 수면 점수 진단
+# 탭 4: 나의 수면 점수 진단 (위치 변경)
 # ------------------------------------------
 with tab4:
-    st.header("🔍 수면 건강 자가진단 서비스")
+    st.header("📋 수면 건강 자가진단 서비스")
     st.markdown("키와 몸무게를 입력하면 BMI를 자동으로 계산하여 데이터 분석 기반 수면 점수를 산출해 드립니다.")
     
     with st.container(border=True):
@@ -270,3 +268,6 @@ with tab4:
             else:
                 st.error("🚨 개선이 시급합니다. 수면 효율을 높이기 위한 생활 습관 교정을 추천드립니다.")
 
+# 원본 데이터 확인
+with st.expander("데이터 원본 상세보기"):
+    st.dataframe(df1.head())
