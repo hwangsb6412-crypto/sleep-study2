@@ -175,54 +175,10 @@ with tab2:
             avg_f = df2.groupby('흡연여부')['각성횟수'].mean().reset_index()
             fig_f = px.bar(avg_f, x='흡연여부', y='각성횟수', color='흡연여부', text_auto='.1f', title="흡연과 각성 횟수")
         st.plotly_chart(fig_f, use_container_width=True)
-
 # ------------------------------------------
-# 탭 3: 나의 수면 점수 진단
+# 탭 3: 심혈관 건강 분석 (새로 추가됨)
 # ------------------------------------------
 with tab3:
-    st.header("🔍 수면 건강 자가진단 서비스")
-    st.markdown("키와 몸무게를 입력하면 BMI를 자동으로 계산하여 데이터 분석 기반 수면 점수를 산출해 드립니다.")
-    
-    with st.container(border=True):
-        col_in1, col_in2 = st.columns(2)
-        with col_in1:
-            u_height = st.number_input("키 (cm)", 100.0, 250.0, 170.0)
-            u_weight = st.number_input("몸무게 (kg)", 30.0, 200.0, 65.0)
-            user_smoke = st.radio("흡연 여부", ["비흡연", "흡연"], horizontal=True)
-        with col_in2:
-            user_alc = st.number_input("일주일 음주 횟수 (회)", 0, 7, 0)
-            user_ex = st.slider("일주일 운동 횟수 (회)", 0, 7, 3)
-            user_sleep = st.number_input("일일 평균 수면 시간 (시간)", 0.0, 12.0, 7.0, step=0.5)
-
-        bmi_val = u_weight / ((u_height / 100) ** 2)
-        bmi_status = "정상" if bmi_val < 18.5 else "정상" if bmi_val < 25 else "과체중" if bmi_val < 30 else "비만"
-        st.info(f"💡 계산된 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
-
-        if st.button("내 수면 점수 확인하기 ✨"):
-            base_score = 90
-            if bmi_status == "과체중": base_score -= 7
-            elif bmi_status == "비만": base_score -= 18
-            if user_smoke == "흡연": base_score -= 12
-            base_score -= (user_alc * 4)
-            base_score += (user_ex * 5)
-            if 7 <= user_sleep <= 8.5: base_score += 10
-            elif user_sleep < 6 or user_sleep > 10: base_score -= 10
-            
-            final_score = max(0, min(100, base_score))
-            st.markdown("---")
-            st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
-            
-            if final_score >= 85:
-                st.success("🎉 아주 좋은 습관입니다! 데이터상으로 숙면 가능성이 매우 높습니다.")
-            elif final_score >= 65:
-                st.warning("⚖️ 보통입니다. 운동량을 조금 더 늘리거나 음주를 줄여보세요.")
-            else:
-                st.error("🚨 개선이 시급합니다. 수면 효율을 높이기 위한 생활 습관 교정을 추천드립니다.")
-
-# ------------------------------------------
-# 탭 4: 심혈관 건강 분석 (새로 추가됨)
-# ------------------------------------------
-with tab4:
     st.header("🩺 수면 질과 심혈관 건강(고혈압) 상관관계")
     st.markdown("수면 점수(수면의 질)가 낮을수록 고혈압 위험이 어떻게 변하는지 실제 데이터를 통해 확인합니다.")
     
@@ -270,3 +226,47 @@ with tab4:
 # 원본 데이터 확인
 with st.expander("데이터 원본 상세보기"):
     st.dataframe(df1.head())
+
+# ------------------------------------------
+# 탭 4: 나의 수면 점수 진단
+# ------------------------------------------
+with tab4:
+    st.header("🔍 수면 건강 자가진단 서비스")
+    st.markdown("키와 몸무게를 입력하면 BMI를 자동으로 계산하여 데이터 분석 기반 수면 점수를 산출해 드립니다.")
+    
+    with st.container(border=True):
+        col_in1, col_in2 = st.columns(2)
+        with col_in1:
+            u_height = st.number_input("키 (cm)", 100.0, 250.0, 170.0)
+            u_weight = st.number_input("몸무게 (kg)", 30.0, 200.0, 65.0)
+            user_smoke = st.radio("흡연 여부", ["비흡연", "흡연"], horizontal=True)
+        with col_in2:
+            user_alc = st.number_input("일주일 음주 횟수 (회)", 0, 7, 0)
+            user_ex = st.slider("일주일 운동 횟수 (회)", 0, 7, 3)
+            user_sleep = st.number_input("일일 평균 수면 시간 (시간)", 0.0, 12.0, 7.0, step=0.5)
+
+        bmi_val = u_weight / ((u_height / 100) ** 2)
+        bmi_status = "정상" if bmi_val < 18.5 else "정상" if bmi_val < 25 else "과체중" if bmi_val < 30 else "비만"
+        st.info(f"💡 계산된 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
+
+        if st.button("내 수면 점수 확인하기 ✨"):
+            base_score = 90
+            if bmi_status == "과체중": base_score -= 7
+            elif bmi_status == "비만": base_score -= 18
+            if user_smoke == "흡연": base_score -= 12
+            base_score -= (user_alc * 4)
+            base_score += (user_ex * 5)
+            if 7 <= user_sleep <= 8.5: base_score += 10
+            elif user_sleep < 6 or user_sleep > 10: base_score -= 10
+            
+            final_score = max(0, min(100, base_score))
+            st.markdown("---")
+            st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
+            
+            if final_score >= 85:
+                st.success("🎉 아주 좋은 습관입니다! 데이터상으로 숙면 가능성이 매우 높습니다.")
+            elif final_score >= 65:
+                st.warning("⚖️ 보통입니다. 운동량을 조금 더 늘리거나 음주를 줄여보세요.")
+            else:
+                st.error("🚨 개선이 시급합니다. 수면 효율을 높이기 위한 생활 습관 교정을 추천드립니다.")
+
