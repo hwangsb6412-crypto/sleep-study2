@@ -9,7 +9,6 @@ import plotly.graph_objects as go
 # ==========================================
 st.set_page_config(
     page_title="수면 건강 집중 분석 대시보드",
-    page_icon="📊",
     layout="wide"
 )
 
