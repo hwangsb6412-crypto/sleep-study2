@@ -277,79 +277,80 @@ with tab4:
                 st.error(" 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
 
 # ------------------------------------------
-# 탭 5: 최적 수면 골든타임 계산기 (사용자 맞춤형)
+# 탭 5: 최적 수면 골든타임 계산기 (사용자 맞춤형 - 레이아웃 수정)
 # ------------------------------------------
 with tab5:
-    st.header(" 데이터 기반 수면 골든타임 계산기")
+    st.header("⏰ 데이터 기반 수면 골든타임 계산기")
     st.markdown("내일 기상 시간과 현재 상태를 입력하면, 개인별 최적 취침 시간을 계산해 드립니다.")
 
     with st.container(border=True):
         col_calc1, col_calc2 = st.columns(2)
         
         with col_calc1:
-            st.subheader(" 나의 상태 및 일정")
+            st.subheader("📅 나의 상태 및 일정")
             target_wakeup = st.time_input("내일 몇 시에 일어나야 하나요?", value=pd.to_datetime("07:00").time())
             user_quality = st.slider("평소 본인의 수면 만족도(점수)", 1, 10, 7)
             today_steps = st.number_input("오늘 총 몇 걸음 걸으셨나요?", 0, 30000, 6000)
             
-            # [추가] 카페인 및 흡연 여부 체크
             c_col1, c_col2 = st.columns(2)
             with c_col1:
                 has_coffee = st.checkbox("오늘 카페인 섭취")
             with c_col2:
                 is_smoking = st.checkbox("흡연 여부(니코틴)")
 
-        with col_calc2:
-            st.subheader(" 개인 맞춤형 분석 가이드")
-            
-            # 기본 수면 시간 설정 (데이터 기반: 우수 집단 평균)
-            base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 7.5
-            
-            adjustment = 0.0
-            
-            # 1. 수면 만족도 보정
-            if user_quality <= 4:
-                adjustment += 1.0
-                st.error(" 수면 만족도가 낮아 1시간의 보충 수면을 권장합니다.")
-            elif user_quality <= 6:
-                adjustment += 0.5
-                st.warning(" 수면 개선을 위해 30분 더 긴 수면이 필요합니다.")
-            
-            # 2. 활동량 보정
-            if today_steps >= 10000:
-                adjustment += 0.5
-                st.info(" 높은 활동량으로 인해 회복 수면 30분이 추가되었습니다.")
-            
-            # 3. 카페인 패널티
-            if has_coffee:
-                adjustment += 0.3
-                st.warning(" 카페인은 뇌를 각성시켜 수면 도입을 방해합니다. (+20분)")
-            
-            # [추가] 4. 흡연(니코틴) 패널티
-            if is_smoking:
-                adjustment += 0.4
-                st.error(" 니코틴은 혈압을 높이고 각성 횟수를 늘립니다. 숙면을 위해 25분 더 일찍 준비하세요.")
-
-            recommended_duration = base_sleep_hr + adjustment
-
-        st.divider()
+        # --- 로직 계산 시작 ---
+        base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 7.5
+        adjustment = 0.0
         
-        # 취침 시간 계산
+        # 보정치 합산 (출력은 아래에서 수행)
+        if user_quality <= 4: adjustment += 1.0
+        elif user_quality <= 6: adjustment += 0.5
+        if today_steps >= 10000: adjustment += 0.5
+        if has_coffee: adjustment += 0.3
+        if is_smoking: adjustment += 0.4
+
+        recommended_duration = base_sleep_hr + adjustment
+        
         from datetime import datetime, timedelta
         now = datetime.now()
         wakeup_dt = datetime.combine(now.date() + timedelta(days=1), target_wakeup)
         bedtime_dt = wakeup_dt - timedelta(hours=recommended_duration)
-        
-        res_col1, res_col2 = st.columns([1, 2])
-        with res_col1:
-            st.subheader(f" 최적 취침 시각: :blue[{bedtime_dt.strftime('%H시 %M분')}]")
-        
-        with res_col2:
+        # --- 로직 계산 끝 ---
+
+        with col_calc2:
+            st.subheader("✅ 최적 분석 결과")
+            # 취침 시각과 권장 수면 시간을 col_calc2 상단에 배치
+            st.write("") # 간격 조절
+            st.subheader(f"최적 취침 시각: :blue[{bedtime_dt.strftime('%H시 %M분')}]")
             st.metric("권장 수면 시간", f"{recommended_duration:.1f}시간")
             
-            # 복합 조언
-            if is_smoking or has_coffee:
-                st.markdown("> ** 전문가 조언:** 니코틴과 카페인은 심박수를 높여 깊은 수면(Deep Sleep) 비중을 줄입니다. 평소보다 어둡고 시원한 환경을 조성하세요.")
-            
             if bedtime_dt.hour >= 1 and bedtime_dt.hour <= 4:
-                st.error(" 데이터상 새벽 1시 이후 취침은 수면 장애 위험을 2배 이상 높입니다.")
+                st.error("🚨 데이터상 새벽 1시 이후 취침은 수면 장애 위험을 2배 이상 높입니다.")
+            
+            if is_smoking or has_coffee:
+                st.markdown("> **💡 전문가 조언:** 니코틴과 카페인은 심박수를 높여 깊은 수면(Deep Sleep) 비중을 줄입니다. 평소보다 어둡고 시원한 환경을 조성하세요.")
+
+    st.divider()
+
+    # 분석 가이드 내용을 하단으로 이동
+    st.subheader("📊 개인 맞춤형 분석 가이드")
+    
+    g_col1, g_col2 = st.columns(2)
+    with g_col1:
+        if user_quality <= 4:
+            st.error("📉 수면 만족도가 낮아 1시간의 보충 수면을 권장합니다.")
+        elif user_quality <= 6:
+            st.warning("⚖️ 수면 개선을 위해 30분 더 긴 수면이 필요합니다.")
+        
+        if today_steps >= 10000:
+            st.info("🏃 높은 활동량으로 인해 회복 수면 30분이 추가되었습니다.")
+
+    with g_col2:
+        if has_coffee:
+            st.warning("☕ 카페인은 뇌를 각성시켜 수면 도입을 방해합니다. (+20분)")
+        
+        if is_smoking:
+            st.error("🚬 니코틴은 혈압을 높이고 각성 횟수를 늘립니다. 숙면을 위해 25분 더 일찍 준비하세요.")
+            
+        if not (has_coffee or is_smoking or user_quality <= 6 or today_steps >= 10000):
+            st.write("• 현재 모든 지표가 양호합니다. 데이터 기반 표준 권장 시간을 유지합니다.")
