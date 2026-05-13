@@ -285,7 +285,7 @@ with tab5:
 
     with st.container(border=True):
         # 입력창과 결과창 사이에 여백을 주어 시각적 쾌적함 제공
-        col_calc1, col_empty, col_calc2 = st.columns([8, 4, 10]) 
+        col_calc1, col_empty, col_calc2 = st.columns([8, 2, 10]) 
         
         with col_calc1:
             st.subheader("📅 나의 상태 및 일정")
@@ -347,27 +347,37 @@ with tab5:
 
     st.divider()
 
-    # --- 하단 분석 가이드 (기존 경고창 및 상세 문구 100% 복구) ---
+   # --- 하단 분석 가이드 (레이아웃 수정: 컬럼1에 집중, 너비 70%) ---
     st.subheader("📊 개인 맞춤형 분석 가이드")
-    g_col1, g_col2 = st.columns(2)
+    
+    # 첫 번째 컬럼의 너비를 7(70%), 두 번째 빈 컬럼을 3(30%)으로 설정
+    g_col1, g_col2 = st.columns([7, 3])
     
     with g_col1:
+        # 1. 수면 만족도 관련 가이드
         if user_quality <= 4:
             st.error("📉 수면 만족도 보정: 만족도가 매우 낮아 1시간의 보충 수면을 권장합니다.")
         elif user_quality <= 6:
             st.warning("⚖️ 수면 만족도 보정: 수면 개선을 위해 30분 더 긴 수면이 필요합니다.")
         
+        # 2. 활동량 관련 가이드
         if today_steps >= 10000:
             st.info("🏃 활동량 보정: 높은 활동량으로 인해 회복 수면 30분이 추가되었습니다.")
         elif today_steps < 3000 and today_steps > 0:
             st.write("• 오늘은 활동량이 적어 평소보다 잠들기까지 시간이 걸릴 수 있습니다.")
 
-    with g_col2:
+        # 3. 카페인 관련 가이드
         if has_coffee:
             st.warning("☕ 카페인 패널티: 카페인은 뇌를 각성시켜 수면 도입을 방해합니다. (+20분)")
         
+        # 4. 니코틴 관련 가이드
         if is_smoking:
             st.error("🚬 니코틴 패널티: 니코틴은 혈압을 높이고 각성 횟수를 늘립니다. 숙면을 위해 25분 더 일찍 준비하세요.")
             
+        # 5. 기본 상태 안내
         if not (has_coffee or is_smoking or user_quality <= 6 or today_steps >= 10000):
             st.write("• 현재 입력하신 데이터는 모두 표준 범위 내에 있습니다. 데이터 기반 권장 시간을 유지하세요.")
+
+    with g_col2:
+    
+        pass
