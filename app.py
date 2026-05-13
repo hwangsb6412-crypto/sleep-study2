@@ -226,26 +226,35 @@ with tab3:
         st.warning("현재 선택된 데이터 범위 내에 '고혈압' 데이터가 부족하여 분석 그래프를 표시할 수 없습니다. 사이드바 필터를 조절해 보세요.")
 
 # ------------------------------------------
-# 탭 4: 나의 수면 점수 진단 (위치 변경)
+# 탭 4: 나의 수면 점수 진단 (3컬럼 레이아웃 수정본)
 # ------------------------------------------
 with tab4:
-    st.header("📋 수면 건강 자가진단 서비스")
-    st.markdown("키와 몸무게를 입력하면 BMI를 자동으로 계산하여 데이터 분석 기반 수면 점수를 산출해 드립니다.")
+    st.header("📋 나의 수면 건강 자가진단 서비스")
+    st.markdown("본인의 데이터를 입력하면 BMI를 자동으로 계산하고 데이터 분석 기반 수면 점수를 산출합니다.")
     
     with st.container(border=True):
-        col_in1, col_in2 = st.columns(2)
-        with col_in1:
+        # 입력 부분을 3개의 컬럼으로 분할
+        col_in1, col_in2, col_in3 = st.columns(3) 
+        
+        with col_in1: 
+            # 첫 번째 컬럼: 키와 몸무게
             u_height = st.number_input("키 (cm)", 100.0, 250.0, 170.0)
             u_weight = st.number_input("몸무게 (kg)", 30.0, 200.0, 65.0)
-            user_smoke = st.radio("흡연 여부", ["비흡연", "흡연"], horizontal=True)
-        with col_in2:
-            user_alc = st.number_input("일주일 음주 횟수 (회)", 0, 7, 0)
+            
+        with col_in2: 
+            # 두 번째 컬럼: 운동횟수와 수면시간
             user_ex = st.slider("일주일 운동 횟수 (회)", 0, 7, 3)
             user_sleep = st.number_input("일일 평균 수면 시간 (시간)", 0.0, 12.0, 7.0, step=0.5)
+            
+        with col_in3: 
+            # 세 번째 컬럼: 음주횟수와 흡연여부
+            user_alc = st.number_input("일주일 음주 횟수 (회)", 0, 7, 0)
+            user_smoke = st.radio("흡연 여부", ["비흡연", "흡연"], horizontal=True)
 
+        # --- 아래는 기존 점수 계산 로직 (수정 금지) ---
         bmi_val = u_weight / ((u_height / 100) ** 2)
         bmi_status = "정상" if bmi_val < 18.5 else "정상" if bmi_val < 25 else "과체중" if bmi_val < 30 else "비만"
-        st.info(f"💡 계산된 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
+        st.info(f"💡 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
 
         if st.button("내 수면 점수 확인하기 ✨"):
             base_score = 90
@@ -262,15 +271,11 @@ with tab4:
             st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
             
             if final_score >= 85:
-                st.success("🎉 아주 좋은 습관입니다! 데이터상으로 숙면 가능성이 매우 높습니다.")
+                st.success("🎉 아주 좋은 습관입니다! 숙면 가능성이 매우 높습니다.")
             elif final_score >= 65:
-                st.warning("⚖️ 보통입니다. 운동량을 조금 더 늘리거나 음주를 줄여보세요.")
+                st.warning("⚖️ 보통입니다. 운동량을 늘리거나 음주를 줄여보세요.")
             else:
-                st.error("🚨 개선이 시급합니다. 수면 효율을 높이기 위한 생활 습관 교정을 추천드립니다.")
-
-# 원본 데이터 확인
-with st.expander("데이터 원본 상세보기"):
-    st.dataframe(df1.head())
+                st.error("🚨 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
 
 # ------------------------------------------
 # 탭 5: 최적 수면 골든타임 계산기 (사용자 맞춤형)
