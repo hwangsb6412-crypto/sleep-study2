@@ -90,7 +90,7 @@ except:
 # ==========================================
 # 3. 사이드바 동적 필터
 # ==========================================
-st.sidebar.title("🎮 동적 필터 조절")
+st.sidebar.title(" 동적 필터 조절")
 
 if not df1_raw.empty and not df2_raw.empty:
     min_age = int(min(df1_raw['나이'].min(), df2_raw['나이'].min()))
@@ -107,18 +107,18 @@ else:
 # ==========================================
 # 4. 메인 UI 구성 (탭 순서 변경)
 # ==========================================
-st.title("📊 수면 건강 핵심 데이터 대시보드")
+st.title(" 수면 건강 핵심 데이터 대시보드")
 
 if df1.empty and df2.empty:
-    st.error("⚠️ 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
+    st.error(" 데이터를 불러오지 못했습니다. CSV 파일 위치를 확인해 주세요.")
     st.stop()
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📉 라이프스타일 분석 (생활 습관)", 
-    "💤 수면 효율 분석 (외부 요인)", 
-    "🩺 심혈관 건강 분석",
-    "📋 나의 수면 점수 진단",
-    "⏰ 최적 수면 골든타임"
+    " 라이프스타일 분석 (생활 습관)", 
+    " 수면 효율 분석 (외부 요인)", 
+    " 심혈관 건강 분석",
+    " 나의 수면 점수 진단",
+    " 최적 수면 골든타임"
 ])
 # ------------------------------------------
 # 탭 1: 생활 습관
@@ -131,7 +131,7 @@ with tab1:
     c4.metric("평균 수면의 질", f"{df1['수면의질'].mean():.1f}점")
     
     st.markdown("---")
-    st.subheader("🎯 맞춤형 수면시간 & 수면의 질 분석")
+    st.subheader(" 맞춤형 수면시간 & 수면의 질 분석")
     col_sel1, col_sel2 = st.columns([1, 3])
     with col_sel1:
         target_category = st.radio("분석 기준", options=['직업', 'BMI분류', '스트레스지수', '혈압원문'], key='tab1_radio')
@@ -140,7 +140,7 @@ with tab1:
         fig_dyn = px.bar(avg_dynamic, x='수면시간', y=target_category, orientation='h', color='수면의질', text_auto='.1f', color_continuous_scale='Turbo', title=f"[{target_category}]별 현황")
         st.plotly_chart(fig_dyn, use_container_width=True)
 
-    st.subheader("⚖️ 체중(BMI) 분류별 수면 장애 현황")
+    st.subheader(" 체중(BMI) 분류별 수면 장애 현황")
     bmi_data = df1.groupby(['BMI분류', '수면장애']).size().reset_index(name='인원수')
     fig3 = px.bar(bmi_data, x='BMI분류', y='인원수', color='수면장애', barmode='group', text_auto=True, color_discrete_map={'없음': '#22c55e', '불면증': '#eab308', '수면 무호흡증': '#ef4444'})
     st.plotly_chart(fig3, use_container_width=True)
@@ -158,12 +158,12 @@ with tab2:
     st.markdown("---")
     col_eff1, col_eff2 = st.columns([1, 2])
     with col_eff1:
-        st.subheader("🛌 수면 단계 구성")
+        st.subheader(" 수면 단계 구성")
         stages = pd.DataFrame({'단계': ['깊은 수면', 'REM 수면', '얕은 수면'], '비중': [df2['깊은수면비율'].mean(), df2['REM비율'].mean(), df2['얕은수면비율'].mean()]})
         fig6 = px.pie(stages, values='비중', names='단계', hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
         st.plotly_chart(fig6, use_container_width=True)
     with col_eff2:
-        st.subheader("⚡ 외부 요인별 분석")
+        st.subheader(" 외부 요인별 분석")
         factor_choice = st.selectbox("분석 요인 선택", ['알코올 섭취량 (수면 효율)', '운동 빈도 (깊은 수면 비중)', '흡연 여부 (각성 횟수)'])
         if '알코올' in factor_choice:
             avg_f = df2.groupby('알코올')['수면효율'].mean().reset_index()
@@ -180,7 +180,7 @@ with tab2:
 # 탭 3: 심혈관 건강 분석 (위치 변경)
 # ------------------------------------------
 with tab3:
-    st.header("🩺 수면 질과 심혈관 건강(고혈압) 상관관계")
+    st.header(" 수면 질과 심혈관 건강(고혈압) 상관관계")
     st.markdown("수면 점수(수면의 질)가 낮을수록 고혈압 위험이 어떻게 변하는지 실제 데이터를 통해 확인합니다.")
     
     # 1. 수면의 질 점수별 고혈압 비율 계산
@@ -199,13 +199,13 @@ with tab3:
             st.plotly_chart(fig_hp, use_container_width=True)
             
         with c_hp2:
-            st.markdown("#### 💡 분석 인사이트")
+            st.markdown("####  분석 인사이트")
             st.write("그래프를 보면 **수면의 질 점수가 낮아질수록 고혈압군에 속하는 인원의 비중이 급격히 증가**하는 경향을 보입니다.")
             st.warning("특히 수면의 질이 4~5점대 이하인 경우, 8점대 이상의 숙면 집단에 비해 고혈압 위험이 유의미하게 높게 관찰됩니다.")
             st.info("수면 부족은 자율신경계 불균형을 초래하여 혈압 상승의 직접적인 원인이 될 수 있음을 시사합니다.")
             
         st.markdown("---")
-        st.subheader("🧬 스트레스 및 BMI와 혈압의 복합 관계")
+        st.subheader(" 스트레스 및 BMI와 혈압의 복합 관계")
         col_hp_sub1, col_hp_sub2 = st.columns(2)
         
         with col_hp_sub1:
@@ -228,7 +228,7 @@ with tab3:
 # 탭 4: 나의 수면 점수 진단 (3컬럼 레이아웃 수정본)
 # ------------------------------------------
 with tab4:
-    st.header("📋 나의 수면 건강 자가진단 서비스")
+    st.header(" 나의 수면 건강 자가진단 서비스")
     st.markdown("본인의 데이터를 입력하면 BMI를 자동으로 계산하고 데이터 분석 기반 수면 점수를 산출합니다.")
     
     with st.container(border=True):
@@ -253,9 +253,9 @@ with tab4:
         # --- 아래는 기존 점수 계산 로직 (수정 금지) ---
         bmi_val = u_weight / ((u_height / 100) ** 2)
         bmi_status = "정상" if bmi_val < 18.5 else "정상" if bmi_val < 25 else "과체중" if bmi_val < 30 else "비만"
-        st.info(f"💡 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
+        st.info(f" 당신의 BMI는 **{bmi_val:.1f}**로, **'{bmi_status}'** 상태입니다.")
 
-        if st.button("내 수면 점수 확인하기 ✨"):
+        if st.button("내 수면 점수 확인하기 "):
             base_score = 90
             if bmi_status == "과체중": base_score -= 7
             elif bmi_status == "비만": base_score -= 18
@@ -267,27 +267,27 @@ with tab4:
             
             final_score = max(0, min(100, base_score))
             st.markdown("---")
-            st.subheader(f"📊 예상 수면 점수: **{final_score}점**")
+            st.subheader(f" 예상 수면 점수: **{final_score}점**")
             
             if final_score >= 85:
-                st.success("🎉 아주 좋은 습관입니다! 숙면 가능성이 매우 높습니다.")
+                st.success(" 아주 좋은 습관입니다! 숙면 가능성이 매우 높습니다.")
             elif final_score >= 65:
-                st.warning("⚖️ 보통입니다. 운동량을 늘리거나 음주를 줄여보세요.")
+                st.warning(" 보통입니다. 운동량을 늘리거나 음주를 줄여보세요.")
             else:
-                st.error("🚨 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
+                st.error(" 개선이 시급합니다. 생활 습관 교정을 추천드립니다.")
 
 # ------------------------------------------
 # 탭 5: 최적 수면 골든타임 계산기 (사용자 맞춤형)
 # ------------------------------------------
 with tab5:
-    st.header("⏰ 데이터 기반 수면 골든타임 계산기")
+    st.header(" 데이터 기반 수면 골든타임 계산기")
     st.markdown("내일 기상 시간과 현재 상태를 입력하면, 개인별 최적 취침 시간을 계산해 드립니다.")
 
     with st.container(border=True):
         col_calc1, col_calc2 = st.columns(2)
         
         with col_calc1:
-            st.subheader("📅 나의 상태 및 일정")
+            st.subheader(" 나의 상태 및 일정")
             target_wakeup = st.time_input("내일 몇 시에 일어나야 하나요?", value=pd.to_datetime("07:00").time())
             user_quality = st.slider("평소 본인의 수면 만족도(점수)", 1, 10, 7)
             today_steps = st.number_input("오늘 총 몇 걸음 걸으셨나요?", 0, 30000, 6000)
@@ -300,7 +300,7 @@ with tab5:
                 is_smoking = st.checkbox("흡연 여부(니코틴)")
 
         with col_calc2:
-            st.subheader("📊 개인 맞춤형 분석 가이드")
+            st.subheader(" 개인 맞춤형 분석 가이드")
             
             # 기본 수면 시간 설정 (데이터 기반: 우수 집단 평균)
             base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 7.5
@@ -310,25 +310,25 @@ with tab5:
             # 1. 수면 만족도 보정
             if user_quality <= 4:
                 adjustment += 1.0
-                st.error("⚠️ 수면 만족도가 낮아 1시간의 보충 수면을 권장합니다.")
+                st.error(" 수면 만족도가 낮아 1시간의 보충 수면을 권장합니다.")
             elif user_quality <= 6:
                 adjustment += 0.5
-                st.warning("⚖️ 수면 개선을 위해 30분 더 긴 수면이 필요합니다.")
+                st.warning(" 수면 개선을 위해 30분 더 긴 수면이 필요합니다.")
             
             # 2. 활동량 보정
             if today_steps >= 10000:
                 adjustment += 0.5
-                st.info("🏃 높은 활동량으로 인해 회복 수면 30분이 추가되었습니다.")
+                st.info(" 높은 활동량으로 인해 회복 수면 30분이 추가되었습니다.")
             
             # 3. 카페인 패널티
             if has_coffee:
                 adjustment += 0.3
-                st.warning("☕ 카페인은 뇌를 각성시켜 수면 도입을 방해합니다. (+20분)")
+                st.warning(" 카페인은 뇌를 각성시켜 수면 도입을 방해합니다. (+20분)")
             
             # [추가] 4. 흡연(니코틴) 패널티
             if is_smoking:
                 adjustment += 0.4
-                st.error("🚬 니코틴은 혈압을 높이고 각성 횟수를 늘립니다. 숙면을 위해 25분 더 일찍 준비하세요.")
+                st.error(" 니코틴은 혈압을 높이고 각성 횟수를 늘립니다. 숙면을 위해 25분 더 일찍 준비하세요.")
 
             recommended_duration = base_sleep_hr + adjustment
 
@@ -345,11 +345,11 @@ with tab5:
             st.metric("권장 수면 시간", f"{recommended_duration:.1f}시간")
         
         with res_col2:
-            st.subheader(f"✅ 최적 취침 시각: :blue[{bedtime_dt.strftime('%H시 %M분')}]")
+            st.subheader(f" 최적 취침 시각: :blue[{bedtime_dt.strftime('%H시 %M분')}]")
             
             # 복합 조언
             if is_smoking or has_coffee:
-                st.markdown("> **💡 전문가 조언:** 니코틴과 카페인은 심박수를 높여 깊은 수면(Deep Sleep) 비중을 줄입니다. 평소보다 어둡고 시원한 환경을 조성하세요.")
+                st.markdown("> ** 전문가 조언:** 니코틴과 카페인은 심박수를 높여 깊은 수면(Deep Sleep) 비중을 줄입니다. 평소보다 어둡고 시원한 환경을 조성하세요.")
             
             if bedtime_dt.hour >= 1 and bedtime_dt.hour <= 4:
-                st.error("🚨 데이터상 새벽 1시 이후 취침은 수면 장애 위험을 2배 이상 높입니다.")
+                st.error(" 데이터상 새벽 1시 이후 취침은 수면 장애 위험을 2배 이상 높입니다.")
