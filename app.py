@@ -344,6 +344,16 @@ with tab5:
         
         if today_steps >= 10000:
             st.info("🏃 높은 활동량으로 인해 회복 수면 30분이 추가되었습니다.")
+        
+        if has_coffee:
+            st.warning("☕ 카페인은 뇌를 각성시켜 수면 도입을 방해합니다. (+20분)")
+        
+        if is_smoking:
+            st.error("🚬 니코틴은 혈압을 높이고 각성 횟수를 늘립니다. 숙면을 위해 25분 더 일찍 준비하세요.")
+            
+        if not (has_coffee or is_smoking or user_quality <= 6 or today_steps >= 10000):
+            st.write("• 현재 모든 지표가 양호합니다. 데이터 기반 표준 권장 시간을 유지합니다.")
+
 
     with g_col2:
         if has_coffee:
