@@ -308,7 +308,7 @@ with tab5:
                 is_smoking = st.checkbox("흡연 여부(니코틴)")
 
         # --- 로직 계산 (모든 보정 수치 원복) ---
-        base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 7.0
+        base_sleep_hr = df1[df1['수면의질'] >= 8]['수면시간'].mean() if not df1.empty else 6.5
         adjustment = 0.0
         
         # 1. 수면 만족도 보정 로직
